@@ -26,6 +26,7 @@ use esp_wifi::{
 #[cfg(feature = "esp32c3")]
 use esp_wifi_sys::include::esp_wifi_set_max_tx_power;
 use heapless::{String, Vec};
+#[cfg(feature = "log")]
 use log::{info, warn};
 
 macro_rules! mk_static {
@@ -177,6 +178,7 @@ async fn connecting_loop(
         }
         if !matches!(controller.is_started(), Ok(true)) {
             controller.set_configuration(&client_config).unwrap();
+            #[cfg(feature = "log")]
             info!("Starting wifi");
             controller.start_async().await.unwrap();
         }
@@ -184,20 +186,26 @@ async fn connecting_loop(
         unsafe {
             // necessary to be able to establish a connection on esp32c3
             let res = esp_wifi_set_max_tx_power(36);
+            #[cfg(feature = "log")]
             if res != 0 {
                 warn!("failed to set esp_wifi_set_max_tx_power {}", res);
             }
         }
 
         match controller.connect_async().await {
-            Ok(_) => info!("Wifi connected!"),
+            Ok(_) => { 
+                #[cfg(feature = "log")]
+                info!("Wifi connected!")
+            }
             Err(e) => {
+                #[cfg(feature = "log")]
                 warn!("Failed to connect to wifi: {e:?}");
                 Timer::after(Duration::from_millis(5000)).await
             }
         }
     }
 
+    #[cfg(feature = "log")]
     warn!(
         "Failed to connect to {} after {} retries",
         client_config.as_client_conf_ref().unwrap().ssid,

@@ -11,14 +11,14 @@ categories = ["embedded", "no-std"]
 keywords = ["esp32", "wifi", "embassy"]
 
 [dependencies]
-log = { version = "0.4.21" }
+log = { version = "0.4.21", optional = true }
 static_cell = { version = "2.0", features = ["nightly"] }
 heapless = "0.8.0"
 
 # dependencies for ESP
 esp-hal = { version = "0.23.1", default-features = false }
 esp-hal-embassy = { version = "0.6.0" }
-esp-wifi = { version = "0.12.0", features = ["log", "wifi", "utils"] }
+esp-wifi = { version = "0.12.0", features = ["wifi", "utils"] }
 
 # dependencies for embassy
 embassy-executor = { version = "0.7.0" }
@@ -43,7 +43,6 @@ esp-wifi-sys = { version = "0.7.1", default-features = false, optional = true }
 embassy-futures = "0.1.1"
 
 esp-println = { version = "0.13.1", default-features = false, features = [
-    "log",
 ] }
 esp-alloc = { version = "0.6.0" }
 esp-backtrace = { version = "0.15.0", features = [
@@ -52,6 +51,8 @@ esp-backtrace = { version = "0.15.0", features = [
     "println",
 ] }
 [features]
+default = ["log"]
+log = ["dep:log", "esp-wifi/log", "esp-println/log", "embassy-executor/log"]
 esp32 = ["esp-hal/esp32", "esp-hal-embassy/esp32", "esp-wifi/esp32"]
 esp32c2 = ["esp-hal/esp32c2", "esp-hal-embassy/esp32c2", "esp-wifi/esp32c2"]
 esp32c3 = [
