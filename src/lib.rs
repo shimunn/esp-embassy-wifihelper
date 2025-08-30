@@ -41,14 +41,13 @@ impl WifiStack {
         ssid: Option<String>,
         password: Option<String>,
         rx: Option<Receiver<'static, CriticalSectionRawMutex, ClientConfiguration, 1>>,
+        config: embassy_net::Config,
     ) -> Self {
         let timg0 = TimerGroup::new(timg0);
         let mut rng = Rng::new(rng);
 
-        let init = Box::leak(Box::new(init(timg0.timer0, rng.clone()).unwrap()));
-        let (controller, interfaces) = esp_wifi::wifi::new(init, wifi).unwrap();
-        let wifi_interface = interfaces.sta;
-
+        let (wifi_interface, controller) =
+            esp_wifi::wifi::new_with_mode(&init, wifi, WifiStaDevice).unwrap();
         let config = embassy_net::Config::dhcpv4(Default::default());
         let seed = (rng.random() as u64) << 32 | rng.random() as u64;
 
@@ -81,8 +80,19 @@ impl WifiStack {
         rng: RNG,
         ssid: String,
         password: String,
+        config: Option<embassy_net::Config>
     ) -> Self {
-        Self::new_internal(spawner, wifi, timg0, rng, Some(ssid), Some(password), None)
+        Self::new_internal(
+            spawner,
+            wifi,
+            timg0,
+            rng,
+            radio_clk,
+            Some(ssid),
+            Some(password),
+            None,
+            config.unwrap_or(embassy_net::Config::dhcpv4(Default::default()))
+        )
     }
 
     pub fn new_connect_later(
@@ -91,8 +101,9 @@ impl WifiStack {
         timg0: TIMG0<'static>,
         rng: RNG,
         rx: Receiver<'static, CriticalSectionRawMutex, ClientConfiguration, 1>,
+        config: Option<embassy_net::Config>
     ) -> Self {
-        Self::new_internal(spawner, wifi, timg0, rng, None, None, Some(rx))
+        Self::new_internal(spawner, wifi, timg0, rng, None, None, Some(rx), config.unwrap_or(embassy_net::Config::dhcpv4(Default::default())))
     }
 
     pub async fn wait_for_connected(&self) -> Option<StaticConfigV4> {
